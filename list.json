@@ -1,0 +1,41 @@
+{
+    "_id": "_design/items",
+    "language": "javascript",
+    "lists": {
+        "csv": "function(head, req){ start({ 'headers': { 'Content-Type': 'text/csv' } });
+        send('ID, Title, Subject, Publisher, Description, Type|');
+        function strip(string) { if (typeof string == 'object') { string = string.toString(); } return string ? string.replace(/\\W*/g, '') : ''; }
+        while(row = getRow()) {
+            send(
+                    '\"'    + row.value.id                 +
+                    '\",\"' + strip(row.value.title)       +
+                    '\",\"' + strip(row.value.creator)       +
+                    '\",\"' + strip(row.value.subject)     +
+                    '\",\"' + strip(row.value.publisher)   +
+                    '\",\"' + strip(row.value.description) +
+                    '\",\"' + strip(row.value.type)        +
+                    '\"|');
+        }
+    }"
+    },
+    "views": {
+        "all": {
+            "map": "
+                function(doc) { emit(doc._id, {
+                    'id'          : doc._id,
+                    'title'       : doc.title,
+                    'creator'       : doc.creator,
+                    'subject'     : doc.subject[0].name,
+                    'publisher'   : doc.publisher,
+                    'description' : doc.description,
+                    'type'        : doc.type
+                });
+            }
+            "
+        },
+        "provider": {
+            "map": "function(doc) {\n\n emit(doc.dplaContributor.name, 1);\n}",
+            "reduce": "function(keys, values)\n{\n return sum(values);\n}"
+        }
+    }
+}
